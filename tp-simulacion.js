@@ -2,10 +2,10 @@ const HV = 1000000000000000
 let T = 0,
     TPLL = 0,
     N = 3,
-    A = [1,1,4],
+    A = [2,4,7],
     TPS = new Array(N).fill(HV),
     PA = new Array(N).fill(0).map( ( _ , index) => new Array(A[index]).fill(HV) ),
-    TF = 10000,
+    TF = 50000,
     STO = new Array(N).fill(0),
     ITO = new Array(N).fill(0),
     SLL = new Array(N).fill(0),
@@ -16,9 +16,7 @@ let T = 0,
 
 /* i: indice del empleado, j: indice del subpuesto */
 
-let generarIA = () =>{
-    return 3
-}
+
 
 let generarRandom = (minimo, maximo) =>{
     let R = 0
@@ -26,6 +24,12 @@ let generarRandom = (minimo, maximo) =>{
         R= Math.random()
     }
     return R
+}
+
+let generarIA = () =>{
+    let R = generarRandom(0.0001, 0.99999999)
+    resultado = Math.pow(Math.log(1/(1-R)), 1/1.0985) * 33.427
+    return resultado
 }
 
 let generarTA = (i) =>{
@@ -44,8 +48,15 @@ let indiceDelMayor = (array) => {
 }
 
 let distribucion = () => {
-    let puesto = PA.findIndex( puestos => puestos.some( puesto => puesto === HV) )
-    return (puesto !== -1)? puesto : indiceDelMayor(A)
+    // let puesto = PA.findIndex( puestos => puestos.some( puesto => puesto === HV) )
+    let puesto
+    if(!PA.every(puestos => puestos.every(p => p !== HV))){
+        let porcentajes_ocupacion = PA.map(puestos => puestos.map(p => (p !== HV)? 1 : 0).reduce((a,b) => a + b) / puestos.length)
+        puesto = indiceDelMenor(porcentajes_ocupacion)
+    }else{
+        puesto = indiceDelMayor(A)
+    }
+    return puesto
 }
 
 let procesarLlegada = () => {
@@ -54,7 +65,7 @@ let procesarLlegada = () => {
     let i = distribucion()
     NS[i]++
     if(NS[i] <= A[i]){
-        STO[i] += ( PA[i].every( tiempo => tiempo === HV ))? 0 : T - ITO[i]
+        STO[i] += ( PA[i].every( tiempo => tiempo === HV ) )? T - ITO[i] : 0
         let j = PA[i].findIndex( pa => pa === HV)
         let TA = generarTA(i)
         PA[i][j] = T + TA
@@ -90,24 +101,28 @@ let simular = () => {
         }
     if(T <= TF ){
         simular();
-    }else if (NS.some((ns, index )=> ns > A[index])){
+    }else if (NS.some(ns => ns != 0)){
         TPLL = HV
         simular()
     }else{
         PTO = STO.map( sto => sto*100 / T)
-        PTE = SS.map((ss, indice) => ( ss - SLL[indice] - STA[indice]) / NT[indice] )
+        PTE = SS.map((ss, indice) => ( ss - SLL[indice]) / NT[indice] )
         CTEM = A.map( a => (a <= 2)? 30000 : (a <= 4)? 40000: 60000 ).reduce((a,b) => a+b)
-        console.log('T', T)
+        console.log( T)
         NT.forEach( (nt, indice) =>{
-            console.log(`NT ${indice}:`, nt)
+            console.log( nt)
         })
         PTO.forEach( (pto, indice) =>{
-            console.log(`PTO ${indice}:`, pto)
+            console.log( pto)
         })
+
         PTE.forEach( (pte, indice) =>{
-            console.log(`PTE ${indice}:`, pte)
+            console.log( pte)
         })
-        console.log('CTEM:', CTEM)
+        console.log( CTEM)
+        console.log( NT.reduce((a,b) => a+b))
+        console.log( PTO.reduce((a,b) => a+b)/ PTO.length)
+        console.log( PTE.reduce((a,b) => a+b)/ PTE.length)
     }
 }
 
